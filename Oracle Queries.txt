@@ -1,0 +1,84 @@
+-- Queries for Big Data Project --
+
+-- Query 1 --
+-- Which factors contribute the most to happiness across the world? By region? --
+
+SELECT Year, ROUND(AVG(GDP),4), ROUND(AVG(Family),4), ROUND(AVG(LifeExpectancy),4), ROUND(AVG(Freedom),4), 
+	     ROUND(AVG(GovtCorruption),4), ROUND(AVG(Generosity),4)
+FROM project_data
+GROUP BY year
+ORDER BY year;
+
+-- Key takeaway: family is more important in 2015, and 2017, but dips below GDP in 2016 as most important. 
+
+SELECT region, ROUND(AVG(GDP),4), ROUND(AVG(Family),4), ROUND(AVG(LifeExpectancy),4), ROUND(AVG(Freedom),4), 
+	       ROUND(AVG(GovtCorruption),4), ROUND(AVG(Generosity),4)
+FROM project_data
+GROUP BY region;
+
+-- Key Takeaway: as GDP increases in regions, GDP starts to matter more. In other words, developed, high economy
+-- countires value their wealth more than developing countries who value family. 
+
+-- Query 2 --
+-- How much does money (GDP) matter in contribution to happiness? --
+
+SELECT region, ROUND(AVG(GDP/happinessscore),4) as PercentGDPtoHappiness, ROUND(avg(happinessscore),4) AS AvgHappinessScore
+FROM project_data
+GROUP BY region
+ORDER BY PercentGDPtoHappiness DESC;
+
+-- Key Takeaway: The happiest countries fall toward the center of the GDP to happiness ratios, indicating that
+-- money does "buy happiness" but it doesn't continue to matter as much as one might think. 
+
+-- Query 3 --
+-- How do the world powers compare in happiness trend to the rest of the world from 2016 to 2017? --
+
+SELECT ROUND(avg(WPGDP),4) as WPGDPAvg, ROUND(avg(WPFamily),4) AS WPFamilyAvg, ROUND(avg(WPLifeExpectancy),4) AS WPLifeExpectancyAvg,  
+        ROUND(avg(WPFreedom),4) AS WPFreedomAvg, ROUND(avg(WPTrust),4) AS WPTrustAvg, ROUND(avg(WPGenerosity),4) AS WPGenerosityAvg 
+FROM ( 
+	SELECT ROUND((GDP),4) as WPGDP, ROUND((Family),4) AS WPFamily, ROUND((LifeExpectancy),4) AS WPLifeExpectancy, ROUND((Freedom),4) AS WPFreedom,  
+        ROUND((GovtCorruption),4) AS WPTrust, ROUND((Generosity),4) AS WPGenerosity 
+	FROM project_data  
+	WHERE country IN('United States','Russia','China','Japan','Germany','United Kingdom','France','Israel','Saudi Arabia', 'South Korea') 
+);
+
+SELECT ROUND(avg(OtherGDP),4) as OtherGDPAvg, ROUND(avg(OtherFamily),4) AS OtherFamilyAvg, ROUND(avg(OtherLifeExpectancy),4) AS OtherLifeExpectancyAvg,  
+        ROUND(avg(OtherFreedom),4) AS OtherFreedomAvg, ROUND(avg(OtherTrust),4) AS OtherTrustAvg, ROUND(avg(OtherGenerosity),4) AS OtherGenerosityAvg 
+FROM ( 
+	SELECT ROUND((GDP),4) as OtherGDP, ROUND((Family),4) AS OtherFamily, ROUND((LifeExpectancy),4) AS OtherLifeExpectancy, ROUND((Freedom),4) AS OtherFreedom,  
+        ROUND((GovtCorruption),4) AS OtherTrust, ROUND((Generosity),4) AS OtherGenerosity 
+	FROM project_data  
+	WHERE country NOT IN('United States','Russia','China','Japan','Germany','United Kingdom','France','Israel','Saudi Arabia', 'South Korea') 
+);
+
+-- When separating the world powers from the rest of the world, we see that they bring the overall increase in 
+-- happiness down across the 2 years. in other words the world without the world powers is trending up in -- happiness, but the 
+-- world powers are trending down. 
+
+-- Query 4 --
+-- Do any countries have significantly higher happiness than their region as a whole? Why? --
+
+SELECT region, MAX(happinessscore), avg(Happinessscore), (MAX(happinessscore) - avg(Happinessscore))
+FROM p2017
+GROUP BY region
+ORDER BY (MAX(happinessscore) - avg(Happinessscore)) DESC;
+
+SELECT country, happinessscore
+FROM p2017
+WHERE region = 'Middle East and Northern Africa'
+ORDER BY happinessscore DESC;
+
+SELECT region, ROUND(avg(happinessscore),4) AS AvgHappinessScore, ROUND(avg(GDP),4) AS AvgGDP, ROUND(avg(Family),4) AS AvgFamily, 
+	       ROUND(avg(LifeExpectancy),4) AS AvgLifeExpectancy, ROUND(avg(Freedom),4) AS AvgFreedom, ROUND(avg(GovtCorruption),4) AS AvgGovtCorruption, ROUND(avg(Generosity),4) AS AvgGenerosity
+FROM p2017
+WHERE region = 'Middle East and Northern Africa'
+GROUP BY region
+UNION
+SELECT country, ROUND((happinessscore),4) AS AvgHappinessScore, ROUND((GDP),4) AS AvgGDP, ROUND((Family),4) AS AvgFamily, ROUND((LifeExpectancy),4) AS AvgLifeExpectancy, 
+		ROUND((Freedom),4) AS AvgFreedom, ROUND((GovtCorruption),4) AS AvgGovtCorruption, ROUND((Generosity),4) AS AvgGenerosity
+FROM p2017
+WHERE country = 'Israel';
+
+-- Israel has a happiness score that is 1.8 points higher than the regions average. Interestingly, their government
+-- trust is much lower than their regions average, meaning they are happier than their region despite their
+-- lack of trust in their government. 
