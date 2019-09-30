@@ -1,0 +1,111 @@
+-- Data used is from a university database. Desired answer is provided, followed by the query used to retrieve the information. 
+
+--Retrieve the class name, minimum GPA, maximum GPA, average GPA, and average GPA plus 10% for each class but only for classes with an average GPA less than 3.5. 
+
+select s.StdClass, MIN(s.stdGPA) as MinGPA, MAX(s.StdGPA) as MaxGPA, AVG(s.StdGPA) as AvgGPA, AVG(s.StdGPA)*1.1 as AvgPlus10
+from student s
+group by s.StdClass
+having Avg(s.StdGPA) < 3.5
+order by avg(s.StdGPA);
+ 
+--Problem #18 – Aggregates of a subset of rows that are grouped and subsetted (using a WHERE clause, a GROUP BY clause, and a HAVING clause)
+ 
+--Retrieve the class name, minimum GPA, maximum GPA, average GPA, and average GPA plus 10% for each class but only for non-IS majors and only for classes with an average GPA greater than 3 for non-IS majors.
+
+select s.StdClass, MIN(s.stdGPA) as MinGPA, MAX(s.StdGPA) as MaxGPA, AVG(s.StdGPA) as AvgGPA, AVG(s.StdGPA)*1.1 as AvgPlus10
+from student s
+where s.StdMajor != 'IS'
+group by s.StdClass
+having avg(s.stdGPA) > 3
+order by avg(s.stdGPA);
+
+
+--Problem #19 – Cartesian Products, how many rows expected 
+ 
+--Perform a Cartesian Product between tables Student, Offering, Enrollment, Course, and Faculty 
+
+select * from student
+cross join enrollment
+cross join faculty
+cross join offering
+cross join course;
+
+--How many columns are expected? 34
+
+--(query used to count number of columns)
+select c.*, f.*, o.*, s.*, e.*
+from course c, faculty f, offering o, student s, enrollment e;
+
+--How many rows are expected? 222,222
+
+--(query used to calculate number of rows)
+select count(*) from student
+cross join enrollment
+cross join faculty
+cross join offering
+cross join course;
+ 
+--Problem #20 – Cartesian Products, figuring out which rows match
+ 
+--Perform a Cartesian Product between tables Student, Offering, Enrollment, Course, and Faculty 
+--Retrieve only the columns which are needed to show matching based on the relationship between the five tables and order in such a way as to tell the matching records.
+
+select s.StdNo, e.StdNo, e.OfferNo, o.OfferNo, o.CourseNo, c.CourseNo, o.FacNo, f.FacNo 
+from student s
+cross join enrollment e
+cross join faculty f
+cross join offering o 
+cross join course c;
+ 
+
+--Problem #21 – Turning a Cartesian Product into an Inner Join by adding a WHERE clause to the Cross Product Syntax 
+ 
+--Start with a Cartesian Product between tables Student, Offering, Enrollment, Course, and Faculty 
+--Retrieve only the columns which are needed to show matching based on the relationship between the five tables and order in such a way as to tell the matching records 
+--Add a WHERE clause to turn the Cartesian Product into an Inner Join. 
+
+select s.StdNo, e.StdNo, e.OfferNo, o.OfferNo, o.CourseNo, c.CourseNo, o.FacNo, f.FacNo 
+from student s
+	cross join enrollment e
+	cross join faculty f
+	cross join offering o 
+	cross join course c
+where s.StdNo = e.StdNo
+	and e.OfferNo = o.OfferNo
+	and o.CourseNo = c.CourseNo
+	and o.FacNo = f.FacNo
+order by 1,2,3,4,5,6,7,8;
+
+--Problem #22 – Converting an Inner Join from Cross Product Syntax to Join Operator Syntax 
+ 
+--Start with the Inner Join using Cross Product Syntax for the tables: Student, Offering, Enrollment, Course, and Faculty Convert to Join Operator Syntax.
+
+select s.StdNo, e.StdNo, e.OfferNo, o.OfferNo, o.CourseNo, c.CourseNo, o.FacNo, f.FacNo 
+from student s
+inner join enrollment e on s.stdNo = e.StdNo
+inner join offering o on o.OfferNo = e.OfferNo
+inner join course c on c.CourseNo = o.CourseNo
+inner join faculty f on f.FacNo = o.FacNo
+order by 1,2,3,4,5,6,7,8;
+
+--Problem #23 – Combining Inner Join and WHERE, GROUP BY, and HAVING clauses 
+ 
+--List the course number, offer number, and average grade of students enrolled in fall 2010 IS course offerings in which more than one student is enrolled. 
+
+select o.CourseNo, o.offerno, avg(e.enrgrade)
+from  offering o 
+inner join enrollment e on e.OfferNo = o.OfferNo
+where o.courseNo like 'IS%'
+and o.OffTerm = 'fall'
+and o.offyear = '2010'
+group by o.courseNo
+having count(e.OfferNo) > 1;
+
+select o.CourseNo, o.offerno, avg(e.enrgrade)
+from  offering o 
+inner join enrollment e on e.OfferNo = o.OfferNo
+where o.courseNo like 'IS%'
+and o.OffTerm = 'spring'
+and o.offyear = '2010'
+group by o.courseNo
+having count(e.OfferNo) > 1;
