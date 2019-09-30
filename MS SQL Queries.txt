@@ -1,0 +1,194 @@
+-- SQL queries written in Microsoft SQL 
+-- The goal of the code is listed followed by the query 
+-- The data in the existing tables is from a university database containing students, faculty, course, enrollment, and offerings.
+
+-- List faculty who are also students. Include all student columns in the result. 
+
+SELECT s.*
+FROM Student s INNER JOIN Faculty f ON
+			s.StdNo = f.FacNo
+ORDER BY 1,2,3;
+
+-- Problem #25 – Self Join
+ 
+--List faculty members who have a higher salary than their supervisor 
+--List the faculty number, last and first names, and salary for both 
+
+SELECT f.FacNo, f.FacLastName, f.FacFirstName, f.FacSalary,
+	   s.FacNo, s.FacLastName, s.FacFirstName, s.FacSalary
+FROM Faculty f INNER JOIN Faculty s
+		ON f.FacSupervisor = s.FacNo
+WHERE f.FacSalary > s.FacSalary
+ORDER BY 1,2,3;
+
+--Problem #26 – Multiple Joins involving a Table more than once
+ 
+--List the last and first names of faculty members and the course number for which the faculty member taught the same course number as their supervisor in 2013 
+
+SELECT f.FacLastName, f.FacFirstName, o1.CourseNo
+FROM (Faculty f INNER JOIN Offering o1
+				ON f.FacNo = o1.FacNo)
+	  INNER JOIN Offering o2
+	  		ON f.FacSupervisor = o2.FacNo
+	  		AND o1.CourseNo = o2.CourseNo
+	  		AND o1.OffYear = o2.OffYear
+WHERE o1.OffYear = 2010
+ORDER BY 1,2,3;
+
+--Problem #27 – Left Outer Join
+ 
+--List all courses and their offerings 
+--Include courses without offerings 
+--List all columns of courses and offerings 
+--(use a Left Outer Join) 
+
+SELECT c.*, o.*
+FROM Course c LEFT JOIN Offering o
+			ON c.CourseNo = o.CourseNo
+ORDER BY 1,2,3,4,5,6;
+
+--Problem #28 – Right Outer Join
+ 
+--List all offerings and the faculty assigned to teach them 
+--Also include courses without a faculty assigned to them 
+--List year, term, course number, offering number, faculty last and first name (use a Right Outer Join) 
+ 
+SELECT o.OffYear, o.OffTerm, o.CourseNo, o.OfferNo, f.FacLastName, f.FacFirstName
+FROM Faculty f RIGHT JOIN Offering o
+			ON f.FacNo = o.FacNo
+ORDER BY 1,2,3,4,5,6;
+
+--Problem #29 – Mixing Left Outer Join with Inner Joins
+ 
+--List information for all IS courses offered in 2013 with at least 1 student enrolled 
+--Include offerings without a faculty assigned 
+--List the offer number, course number, term, description,  faculty number, faculty last and first names 
+--Suppress duplicates when more than 1 student is enrolled 
+
+SELECT DISTINCT o.OfferNo, c.CourseNo, o.OffTerm, c.CrsDesc, f.FacNo,
+				f.FacLastName, f.FacFirstName
+FROM ((Offering o LEFT JOIN Faculty f
+				ON o.FacNo = f.FacNo)
+	   INNER JOIN Course c
+	   			ON o.CourseNo = c.CourseNo)
+	   INNER JOIN Enrollment e
+	   			ON o.OfferNo = e.OfferNo
+WHERE c.CourseNo LIKE 'IS%'
+AND o.OffYear = 2010
+ORDER BY 1,2;
+
+
+--Problem #30 – Examining the difference between UNION and UNION ALL
+ 
+--Retrieve all faculty and students 
+--Only show common columns in the result 
+--Remove duplicates 
+--Repeat query allowing duplicates 
+ 
+SELECT f.FacNo AS PersonNo, f.FacLastName AS LastName, f.FacFirstName AS FirstName, 
+	   f.FacCity AS City
+FROM Faculty f
+UNION
+SELECT s.StdNo AS PersonNo, s.StdLastName AS LastName, s.StdFirstName AS FirstName, 
+	   s.StdCity AS City 
+FROM Student s
+ORDER BY 1,2,3;
+
+SELECT f.FacNo AS PersonNo, f.FacLastName AS LastName, f.FacFirstName AS FirstName, 
+	   f.FacCity AS City
+FROM Faculty f
+UNION ALL
+SELECT s.StdNo AS PersonNo, s.StdLastName AS LastName, s.StdFirstName AS FirstName, 
+	   s.StdCity AS City 
+FROM Student s
+ORDER BY 1,2,3;
+
+--Problem #31 – Type 1 Subquery (nested one level)
+ 
+--List student last and first names and majors for students who had at least one high grade (>= 
+--3.5) in at least one course offered in fall of 2012 
+--(use a Type 1 Subquery) 
+
+SELECT s.StdLastName, s.StdFirstName, s.StdMajor
+FROM Student s INNER JOIN Enrollment e
+	 ON s.StdNo = e.StdNo
+WHERE e.EnrGrade >= 3.5
+AND e.OfferNo IN
+		(SELECT o.OfferNo
+		FROM Offering o
+		WHERE o.OffTerm = 'FALL'
+		AND o.OffYear = 2009)
+ORDER BY 1,2;
+
+--Problem #32 – Type 1 Subquery (nested multiple levels)
+ 
+--List student last and first names and majors for students who had at least one high grade  
+--(>= 3.5) in at least one course offered in winter of 2013 which was not taught by Leonard Vince (Use nested Type 1 Subqueries) 
+
+SELECT s.StdLastName, s.StdFirstName, s.StdMajor
+FROM Student s INNER JOIN Enrollment e 
+		ON s.StdNo = e.StdNo 
+WHERE e.EnrGrade >= 3.5
+AND e.OfferNo IN 
+	(SELECT o.OfferNo
+	FROM Offering o 
+	WHERE o.OffTerm = 'WINTER'
+	AND o.OffYear = 2010
+	AND o.FacNo NOT IN 
+		(SELECT f.FacNo
+		FROM Faculty f 
+		WHERE f.FacFirstName = 'LEONARD'
+		AND f.FacLastName = 'VINCE'))
+ORDER BY 1,2;
+
+
+--Problem #33 – Type 2 Subquery
+ 
+--Retrieve the faculty last and first names of faculty who are not students 
+--(use a Type 2 Subquery) 
+
+SELECT f.FacLastName, f.FacFirstName
+FROM Faculty f 
+WHERE NOT EXISTS (SELECT *
+		    FROM Student s 
+		    WHERE s.StdNo = f.FacNo)
+ORDER BY 1,2; 
+
+
+Problem #34 – Division Problem using Type 2 Subquery
+ 
+--List faculty last and first names of faculty who taught all of the fall of 2012 IS offerings 
+
+SELECT f.FacLastName, f.FacFirstName
+FROM Faculty f INNER JOIN Offering o 
+			ON f.FacNo = o.FacNo 
+WHERE o.OffTerm = 'FALL'
+AND o.OffYear = 2009
+AND o.CourseNo LIKE 'IS%'
+GROUP BY f.FacLastName, f.FacFirstName
+HAVING COUNT(*) = (SELECT COUNT(*)
+				  FROM Offering o1
+				  WHERE o1.OffTerm = 'FALL'
+				  AND o1.OffYear =2009
+				  AND o1.CourseNo LIKE 'IS%')
+ORDER BY 1,2;
+
+
+--Problem #35 – Subquery in the FROM Clause aka “Table on the fly”
+ 
+--List the course number, course description, number of offerings, and the average enrollment across offerings 
+
+SELECT t.CourseNo, t.CrsDesc, COUNT(*) AS NumOfferings, 
+	   AVG(t.EnrollCount) AS AvgEnroll
+FROM 
+	(SELECT c.CourseNo, c.CrsDesc, o.OfferNo, COUNT(*) AS EnrollCount
+	FROM (Course c INNER JOIN Offering o 
+				ON c.CourseNo = o.CourseNo)
+	INNER JOIN Enrollment e 
+				ON o.OfferNo = e.OfferNo
+	GROUP BY c.CourseNo, c.CrsDesc, o.OfferNo 
+	) t 
+GROUP BY t.CourseNo, t.CrsDesc
+ORDER BY 1,2; 
+
+
